@@ -1,0 +1,25 @@
+package politse.web;
+	
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.primefaces.push.annotation.OnMessage;
+import org.primefaces.push.annotation.PushEndpoint;
+import org.primefaces.push.annotation.Singleton;
+import org.primefaces.push.impl.JSONEncoder;
+
+import politse.entity.OrderBook;
+	
+	@Singleton
+	@PushEndpoint("/notify")
+	public class PricesResource {
+		
+		private static final Logger logger = Logger.getLogger("politse.web.PricesResource");
+		
+	    @OnMessage(encoders = {JSONEncoder.class})
+	    public String onMessage(String eventType) throws InterruptedException {
+	    	logger.log(Level.INFO, "PricesResource.onMessage type {0}",eventType);
+	        return eventType;
+	    }
+	}
+

@@ -1,0 +1,70 @@
+package politse.ejb;
+
+
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+
+@Singleton
+@Startup
+public class ConfigBean {
+	
+	@EJB
+    private politse.ejb.RequestBean request;
+	@EJB
+	private politse.ejb.LoginRequest loginRequest;
+	//private politse.ejb.OrderMonitorBean monitor;
+	private static final Logger logger = Logger.getLogger("politse.ejb.ConfigBean");
+	
+	@PostConstruct
+	public void createData()
+	{
+		//System.out.println("ian test");
+		request.createParliament("WST100");
+		request.createParty("CON", "Conservatives", 0, "WST100");
+		request.createParty("LAB", "Labour", 0, "WST100");
+		request.createParty("GRN", "Conservatives", 0, "WST100");
+		request.createMember("CLCS", "Caroline", "Lucas", 20,3000,10000,345,123,"GRN");
+		request.createMember("TWTN", "Tom", "Watson", 12,5000,10000,123,456,"LAB");
+		request.createPortfolio(0,"CLCS",00002);
+		request.createPortfolio(0,"TWTN",00002);
+		//request.createPortfolio(0, "CLCS", 00001);
+		request.createTrader(00001,"Ian",10000.00,00001);
+		request.createTrader(00002,"Jimmy",10000.00,00002);
+		request.createTrader(00003, "Tammy", 10000.00, 00003);
+		request.addPortfolio(00002,00001,100);
+		request.addPortfolio(00002, 00002,100);
+		//request.addPortfolio(00001, 00003, 100);
+		
+		try {
+			loginRequest.createUser("ianw", "password12", "",00001);
+			loginRequest.createUser("jimmy", "test12", "", 00002);
+			loginRequest.createUser("tammy", "test123", "", 00003);
+		} catch (NoSuchAlgorithmException e) {
+			
+			e.printStackTrace();
+			logger.log(Level.INFO, "NoSuchAlgorithmException");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			logger.log(Level.INFO, "UnsupportedEncodingException");
+		}
+		
+		request.addUserToTrader("ianw",00001);
+		request.addUserToTrader("jimmy",00002);
+		request.addUserToTrader("tammy", 00003);
+		
+		//create an orderbook
+		/*Integer askOrderId = request.createAskOrder(new Integer(50), 1.0, "CLCS", "00001");
+		Integer bidOrderId = request.createBidOrder(new Integer(50), 1.1, "CLCS", "00002");
+		request.createOrderBook(bidOrderId, askOrderId, "ianw");*/
+		
+		
+	}
+}

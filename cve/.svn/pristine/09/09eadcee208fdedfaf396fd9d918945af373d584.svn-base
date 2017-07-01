@@ -1,0 +1,123 @@
+package politse.entity;
+
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.persistence.Cacheable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
+import javax.persistence.PostPersist;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import static javax.persistence.TemporalType.TIMESTAMP;
+
+@Entity
+@Table(name="AskOrder")
+@NamedQueries({
+@NamedQuery(
+    name="findAskOrdersByMember",
+    query="SELECT ao FROM AskOrder ao " +
+    "WHERE ao.member = :member AND ao.trader != :trader AND ao.amount != 0"
+),
+@NamedQuery(
+	    name="findAllAskOrders",
+	    query="SELECT ao FROM AskOrder ao"
+	),
+@NamedQuery(
+	    name="findAskOrdersByTrader",
+	    query="SELECT ao FROM AskOrder ao " +
+	    "WHERE ao.trader = :trader"
+	),
+@NamedQuery(
+	    name="findActiveAskOrdersByTrader",
+	    query="SELECT ao FROM AskOrder ao " +
+	    "WHERE ao.trader = :trader " +
+	    "AND ao.price <> 0"
+	)
+})
+public class AskOrder {
+	
+	private Integer orderId;
+	private Integer amount;
+	private Double price;
+	private Member member;
+	private Trader trader;
+	private Date lastUpdate;
+	private OrderBook orderBook;
+	
+	private static final Logger logger = Logger.getLogger("politse.ejb.AskOrder");
+
+	public AskOrder()
+	{
+		this.lastUpdate = new Date();
+	}
+	
+	public AskOrder(Integer amount, Double price, Member member, Trader trader)
+	{
+		this.amount = amount;
+		this.price = price;
+		this.member = member;
+		this.trader = trader;
+		this.lastUpdate = new Date();
+	}
+	
+	@GeneratedValue
+	@Id
+	public Integer getOrderId() {
+		return orderId;
+	}
+	public void setOrderId(Integer orderId) {
+		this.orderId = orderId;
+	}
+	public Integer getAmount() {
+		return amount;
+	}
+	public void setAmount(Integer amount) {
+		this.amount = amount;
+	}
+	public Double getPrice() {
+		return price;
+	}
+	public void setPrice(Double price) {
+		this.price = price;
+	}
+	
+	@ManyToOne
+	public Member getMember() {
+		return member;
+	}
+	public void setMember(Member member) {
+		this.member = member;
+	}
+	
+	@ManyToOne
+	public Trader getTrader() {
+		return trader;
+	}
+	public void setTrader(Trader trader) {
+		this.trader = trader;
+	}
+	
+	@Temporal(TIMESTAMP)
+	public Date getLastUpdate() {
+		return lastUpdate;
+	}
+	
+	public void setLastUpdate(Date lastUpdate) {
+		this.lastUpdate = lastUpdate;
+	}
+	
+	@PostPersist
+	public void postPersist(){
+		
+		logger.log(Level.INFO,"AskOrder {0} persisted",new Object[]{this.orderId});
+	}
+
+}

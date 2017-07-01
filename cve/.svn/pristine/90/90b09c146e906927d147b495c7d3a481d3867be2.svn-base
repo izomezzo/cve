@@ -1,0 +1,32 @@
+package politse.web;
+
+import javax.enterprise.context.Dependent;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ViewScoped;
+import javax.faces.context.FacesContext;
+
+import org.primefaces.context.RequestContext;
+
+@Dependent 
+public class GrowlView {
+
+	
+	private String message;
+	 
+    public String getMessage() {
+        return message;
+    }
+ 
+    public void setMessage(String message) {
+        this.message = message;
+    }
+     
+    public void saveMessage() {
+    	//RequestContext requestContext = RequestContext.getCurrentInstance();
+        FacesContext context = FacesContext.getCurrentInstance();
+        context.addMessage(null, new FacesMessage("Error:",  message));
+       // requestContext.update("growl");
+    }
+
+}

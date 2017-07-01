@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    <h:head>
+    
+        <title>Politse Index</title>
+ 			<script type="text/javascript">
+ 			
+				function handleMessage(data) 
+				{	
+					if(data == 'price')
+					{					
+						updateWidget(); //FIXME
+						console.log("data is price");
+					}
+					
+				} 
+				
+				function handleError(facesmessage) {
+					console.log("handleError");
+		            facesmessage.severity = 'info';
+		            PF('growl').show([facesmessage]);
+		        }
+				
+				function handlePush(facesmessage){
+					console.log("handlePush");
+					facesmessage.severity = 'info';
+		            PF('growl').show([facesmessage]);
+				}
+				
+				function onError(){
+					console.log("on error");
+				}
+				
+				function onStart(){
+					console.log("on start");
+				}
+				
+				function onComplete(){
+					console.log("on complete");
+				}
+				
+				function onSuccess(){
+					console.log("on success");
+				}
+				
+		</script>
+    </h:head>
+    <h:body>      
+    
+    <h:form>
+      
+      <h:panelGroup id="resultDisplay">         
+             <h:outputText id="balance" value="#{parliamentManager.traderBalance}" />    
+                              
+				<p:dataGrid id="prices" var="orderBooks" value="#{parliamentManager.latestPricesResults}" columns="3" rows="12">
+					<f:facet name="header">
+			        	WST 100
+			        </f:facet>
+					<p:column>
+   					<p:panel header="#{orderBooks.bidOrderId.member.memberId}">
+      			<h:panelGrid columns="1">
+   				<h:outputText value="#{orderBooks.price}" />
+   				<h:outputText value="#{orderBooks.bidOrderId.member.party}" />
+   				<h:outputText value="#{orderBooks.lastUpdate}" />
+				</h:panelGrid>
+   				</p:panel>
+				</p:column>
+				</p:dataGrid>
+				
+			<p:dataTable id="portfolioTable" var="portfolio" value="#{parliamentManager.portfolios}">
+			<f:facet name="header">
+            	Portfolio
+        	</f:facet>
+			    <p:column headerText="Member">
+			        <h:outputText value="#{portfolio.member.memberId}" />
+			    </p:column>
+			 
+			    <p:column headerText="Amount">
+			        <h:outputText value="#{portfolio.balance}" />
+			    </p:column>
+			</p:dataTable>
+			   
+			
+			<h:selectOneMenu value="#{parliamentManager.bidMemberSelected}">
+    		<f:selectItems value="#{parliamentManager.memberResultsId}" />
+		</h:selectOneMenu>
+		
+		<h:selectOneMenu value="#{parliamentManager.bidTraderSelected}">
+    	<f:selectItems value="#{parliamentManager.traderResultsId}" />
+		  </h:selectOneMenu>          
+                      
+            <h:inputText id="bidPrice"
+                         title="add bidprice"
+                         value="#{parliamentManager.bidPrice}"
+                         required="false"
+                         requiredMessage="Error: A name is required."
+                         maxlength="10" 
+                         />
+             <h:inputText id="bidAmount"
+                         title="add amount"
+                         value="#{parliamentManager.bidAmount}"
+                         required="false"
+                         requiredMessage="Error: A name is required."
+                         maxlength="10" 
+                         />
+                         
+             <p:commandButton value="SubmitBuyOrder" update="resultDisplay" actionListener="#{parliamentManager.submitBidOrder}"/>
+			
+			<p:selectOneMenu id="portfolioMembersdd" value="#{parliamentManager.portfolioMemberSelected}" style="width:150px">
+                <f:selectItem itemLabel="Select Member" itemValue="" noSelectionOption="true" />
+                <f:selectItems value="#{parliamentManager.portfolioMembersId}" />
+            </p:selectOneMenu>
+            </h:panelGroup>  
+		
+		<h:inputText id="askPrice"
+                         title="add askprice"
+                         value="#{parliamentManager.askPrice}"
+                         required="false"
+                         requiredMessage="Error: A name is required."
+                         maxlength="10" 
+                         />
+             <h:inputText id="askAmount"
+                         title="add amount"
+                         value="#{parliamentManager.askAmount}"
+                         required="false"
+                         requiredMessage="Error: A name is required."
+                         maxlength="10" 
+                         />
+
+             <p:commandButton value="SubmitSellOrder" update="resultDisplay" actionListener="#{parliamentManager.submitAskOrder}"/>
+			 
+			 <p:commandButton value="UpdateWidget" onclick="updateWidget()"/>	
+				
+<p:remoteCommand name="updateWidget"
+				 autoRun="false"
+                 actionListener="#{parliamentManager.findLatestPrices}"
+                 update="resultDisplay"
+                 onstart="onStart()"
+                 oncomplete="onComplete()"
+                 onsuccess="onSuccess()"
+                 onerror="onError()">
+                 <f:actionListener binding="#{parliamentManager.findTraders()}" />
+                 <f:actionListener binding="#{parliamentManager.findPortfolios()}" />
+                 </p:remoteCommand>
+                 
+ <p:remoteCommand name="checkOrders"
+                  actionListener="#{parliamentManager.checkOrders}" /> 
+                 
+<p:remoteCommand name="updateGrowl"
+                 update="growl" 
+                 autoRun="false"/>
+				 
+
+</h:form>
+
+		<p:socket onMessage="handleMessage" channel="/notify" />
+		<p:socket onMessage="handleError" channel="/error" />
+		<p:socket onMessage="handlePush" channel="/#{parliamentManager.userId}" autoConnect="true" widgetVar="subscriber"/>
+  
+  <p:growl id="growl" widgetVar="growl" showDetail="true" sticky="true"/>   
+                 
+</h:body>
+</html>

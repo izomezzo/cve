@@ -1,0 +1,19 @@
+package politse.util;
+
+public class TraderException extends Exception {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3395510074309125553L;
+
+	public TraderException()
+	{
+		
+	}
+	
+	public TraderException(String msg)
+	{
+		super(msg);
+	}
+}

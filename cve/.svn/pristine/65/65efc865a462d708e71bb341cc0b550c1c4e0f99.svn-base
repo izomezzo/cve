@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    <h:head>    
+     </h:head>
+    <h:body>
+    <script type="text/javascript">
+    
+			    document.addEventListener("DOMContentLoaded", function(event) {
+			    	maximiseIFrame();
+			        console.log("DOM fully loaded and parsed");
+			      });
+			 			
+			    function maximiseIFrame() 
+				{
+					var panel = document.getElementById("portfolioForm");
+					var frame = window.frameElement;
+					frame.height = panel.clientHeight +16;
+					console.log("maximiseIFrame portfolio");
+					console.log(frame.height);
+				}
+	
+	 
+				function handleMessage(data) 
+				{	
+					if(data == 'price')
+					{					
+						updateWidget();
+						updateAskOrders();
+						maximiseIFrame();
+						console.log("portfolio: data is price");
+					}
+					
+				}
+				
+				function handleOrder(data) 
+				{	
+					console.log("handleOrder");
+					
+					if(data == 'askOrder')
+					{					
+						updateAskOrders();
+						console.log("updateAskOrders is askOrder")
+					}
+					
+					if(data == 'bidOrder')
+					{
+						updateBidOrders();
+					}
+					
+				}
+				
+				function handleGrowl(facesmessage) {
+					console.log("handleGrowl");
+		            facesmessage.severity = 'info';
+		            PF('growl').show([facesmessage]);
+		        }
+				
+				function onError(){
+					console.log("on error");
+				}
+				
+				function onStart(){
+					console.log("on start");
+				}
+				
+				function onComplete(){
+					console.log("on complete");
+				}
+				
+				function onSuccess(){
+					console.log("on success");
+				}
+		</script>
+    <h:form id ="portfolioForm">
+        <p:dataTable id="portfolioTable" var="portfolio" value="#{portfolioView.portfolios}">
+			<f:facet name="header">
+            	Portfolio
+        	</f:facet>
+			    <p:column headerText="Member">
+			        <h:outputText value="#{portfolio.member.memberId}" />
+			    </p:column>
+			 
+			    <p:column headerText="Amount">
+			        <h:outputText value="#{portfolio.balance}" />
+			    </p:column>
+			</p:dataTable>
+			
+			<p:dataTable id="askOrdersTable" var="orders" value="#{portfolioView.askOrders}">
+			<f:facet name="header">
+            	Pending Ask Orders
+        	</f:facet>
+			    <p:column headerText="Member">
+			        <h:outputText value="#{orders.member.memberId}" />
+			    </p:column>
+			 
+			    <p:column headerText="Price">
+			        <h:outputText value="#{orders.price}" />
+			    </p:column>
+			    
+			    <p:column headerText="Amount">
+			        <h:outputText value="#{orders.amount}" />
+			    </p:column>
+			</p:dataTable>
+			
+			<p:dataTable id="bidOrdersTable" var="orders" value="#{portfolioView.bidOrders}">
+			<f:facet name="header">
+            	Pending Bid Orders
+        	</f:facet>
+			    <p:column headerText="Member">
+			        <h:outputText value="#{orders.member.memberId}" />
+			    </p:column>
+			 
+			    <p:column headerText="Price">
+			        <h:outputText value="#{orders.price}" />
+			    </p:column>
+			    
+			    <p:column headerText="Amount">
+			        <h:outputText value="#{orders.amount}" />
+			    </p:column>
+			</p:dataTable>
+			
+			<p:remoteCommand name="updateWidget"
+				 autoRun="true"
+                 update="portfolioTable"
+                 onstart="onStart()"
+                 oncomplete="onComplete()"
+                 onsuccess="onSuccess()"
+                 onerror="onError()">
+    				<f:actionListener binding="#{portfolioView.findPortfolios()}"/>
+    				<f:actionListener binding="#{portfolioView.findAskOrders()}"/>
+                 </p:remoteCommand>
+                 
+                 <p:remoteCommand name="updateAskOrders"
+				 autoRun="true"
+                 update="askOrdersTable"
+                 onstart="onStart()"
+                 oncomplete="onComplete()"
+                 onsuccess="onSuccess()"
+                 onerror="onError()">
+    				<f:actionListener binding="#{portfolioView.findAskOrders()}"/>
+                 </p:remoteCommand>
+                 
+                 <p:remoteCommand name="updateBidOrders"
+				 autoRun="true"
+                 update="bidOrdersTable"
+                 onstart="onStart()"
+                 oncomplete="onComplete()"
+                 onsuccess="onSuccess()"
+                 onerror="onError()">
+    				<f:actionListener binding="#{portfolioView.findBidOrders()}"/>
+                 </p:remoteCommand>
+                 
+			</h:form>
+			<p:socket onMessage="handleMessage" channel="/notify" />
+			<p:socket onMessage="handleOrder" channel="/order/#{portfolioView.userId}" autoConnect="true" />
+    </h:body>
+    </html>
+

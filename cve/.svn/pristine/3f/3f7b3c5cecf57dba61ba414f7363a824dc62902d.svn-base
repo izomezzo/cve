@@ -1,0 +1,28 @@
+package politse.util;
+
+import java.io.Serializable;
+
+import politse.entity.AskOrder;
+
+public class AskOrderEvent implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5841609188028231461L;
+	private AskOrder askOrder;
+	
+	public AskOrderEvent(AskOrder askOrder){
+		
+		this.setAskOrder(askOrder);
+	}
+
+	public AskOrder getAskOrder() {
+		return askOrder;
+	}
+
+	public void setAskOrder(AskOrder askOrder) {
+		this.askOrder = askOrder;
+	}
+
+}

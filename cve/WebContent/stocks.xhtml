@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    <h:head>
+    <script type="text/javascript">
+	</script>
+     </h:head>
+    <h:body>
+        <h:form id="form">
+            <p:dataGrid id="prices" var="orderBooks" value="Test" columns="3" rows="12">
+					<f:facet name="header">
+			        	WST 100
+			        </f:facet>
+					<p:column>
+   					<p:panel header="TestmemberId">
+      			<h:panelGrid columns="1">
+   				<h:outputText value="TestPrice" />
+   				<h:outputText value="TestValue" />
+   				<h:outputText value="Testupdate" />
+   				<p:commandLink update="buyDetail" oncomplete="PF('buyDialog').show()" title="View Detail">
+                    <h:outputText value="Buy"/>
+                </p:commandLink>
+                <p:commandLink update="sellDetail" oncomplete="PF('sellDialog').show()" title="View Detail" rendered="true">
+                    <h:outputText value="Sell"/>
+                </p:commandLink>
+				</h:panelGrid>
+   				</p:panel>
+				</p:column>
+				</p:dataGrid>
+        </h:form>
+        
+        <p:dialog id="buyDlg" header="Buy Shares" widgetVar="buyDialog" modal="true" showEffect="fade" hideEffect="fade" resizable="false" appendTo="@(body)">
+        			<p:outputPanel id="buyDetail" style="text-align:center;">
+            			<p:panelGrid  columns="2" columnClasses="label,value" style="margin:auto">
+            			<h:outputText value="Member" />
+                		<h:outputText value="Test" />
+                		<h:outputText value="Party" />
+                		<h:outputText value="Test" />
+                		<h:outputText value="Price" />
+                		<h:outputText value="Test" />
+                		</p:panelGrid>              		
+                		<h:form style="padding-top:10px;">
+                			<p:messages id="Buymsgs" />
+                			<h:panelGrid columns="3" cellpadding="5" style="margin:auto">
+                			<h:outputText value="Amount:" />
+                			<p:inputText id="bidAmount" required="true" label="BuyAmount" style="max-width:50px;">
+                			<p:ajax update="msgBidAmount" event="keyup"/>   
+                			</p:inputText>
+                			<p:message for="bidAmount" id="msgBidAmount" display="icon"/>
+                			<h:outputText value="Price:" />
+                			<p:inputText id="bidPrice" required="true" label="BuyPrice" style="max-width:50px;">
+                			<p:ajax update="msgPrice" event="keyup"/>   
+                			</p:inputText>
+                			<p:message for="bidPrice" id="msgPrice" display="icon"/>
+                			</h:panelGrid>		
+            				<p:commandButton process="@this,bidAmount,bidPrice" update="Buymsgs,:form:prices" value="Buy" id="BuyButton" styleClass="ui-priority-primary" style="margin-top:10px;">
+    						</p:commandButton>      				
+        				</h:form> 
+        				</p:outputPanel>      			
+    			</p:dialog>
+    			
+    		<p:dialog header="Sell Shares" id="sellDialog" widgetVar="sellDialog" modal="true" showEffect="fade" hideEffect="fade" resizable="false" appendTo="@(body)" >
+        			<p:outputPanel id="sellDetail" style="text-align:center;">
+            			<p:panelGrid  columns="2" columnClasses="label,value" style="margin:auto">
+            			<h:outputText value="Member" />
+                		<h:outputText value="Test" />
+                		<h:outputText value="Party" />
+                		<h:outputText value="Test" />
+                		<h:outputText value="Price" />
+                		<h:outputText value="Test" />
+                		</p:panelGrid>              		
+                		<h:form id="sellForm" style="padding-top:10px;">
+                			<p:messages id="Sellmsgs" />
+                			<h:panelGrid columns="3" cellpadding="5" style="margin:auto">
+                			<h:outputText value="Amount:" />
+                			<p:inputText id="askAmount" required="true" label="SellAmount" style="max-width:50px;">
+                			</p:inputText>
+                			<p:ajax update="msgAmount" event="keyup"/>
+                			<p:message for="askAmount" id="msgAmount" display="icon"/>
+                			<h:outputText value="Price:"/>
+                			<p:inputText id="askPrice" value="#{stocksView.askPrice}" required="true" label="SellPrice" style="max-width:50px;">
+                			<p:ajax update="msgPrice" event="keyup"/>   
+                			</p:inputText>
+                			<p:message for="askPrice" id="msgPrice" display="icon"/>
+                			</h:panelGrid>		
+            				<p:commandButton process="@this,askAmount,askPrice" update="Sellmsgs,:form:prices" value="Sell" id="SellButton" styleClass="ui-priority-primary" style="margin-top:10px;" >      				
+    						</p:commandButton>
+        				</h:form> 
+        				</p:outputPanel>      			
+    			</p:dialog>
+    </h:body>
+    </html>

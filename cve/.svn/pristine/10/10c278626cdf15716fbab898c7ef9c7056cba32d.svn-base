@@ -1,0 +1,201 @@
+package politse.entity;
+
+import static javax.persistence.CascadeType.ALL;
+import static javax.persistence.TemporalType.TIMESTAMP;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+
+import javax.persistence.Basic;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+
+
+@Entity
+@Table(name="Member")
+@NamedQuery(
+    name="findAllMembers",
+    query="SELECT m FROM Member m " +  
+    "ORDER BY m.memberId"
+)
+
+public class Member implements java.io.Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -468520665316481235L;
+	
+	private String memberId;
+	private String forename;
+	private String surname;
+	private Integer position;
+	private Integer majority;
+	private Integer IPO;
+	private Integer questions;
+	private Integer answers;
+	private Party party;
+	private Date lastUpdate;
+	private char status;
+	private Collection<Portfolio> portfolios;
+	private Collection<AskOrder> askOrders;
+	private Collection<BidOrder> bidOrders;
+	
+	 public Member() {
+	    	
+	        this.lastUpdate = new Date();
+	    }
+	 
+	 public Member(String memberId,String forename, String surname, Integer position, 
+			 Integer majority, Integer IPO, Integer questions, Integer answers, Party party) {
+	        this.memberId = memberId;
+	        this.forename = forename;
+	        this.surname = surname;
+	        this.position = position;
+	        this.majority = majority;
+	        this.IPO = IPO;
+	        this.questions = questions;
+	        this.answers = answers;
+	        this.party = party;
+	        this.lastUpdate = new Date();
+	        this.askOrders = new ArrayList<AskOrder>();
+	        this.bidOrders = new ArrayList<BidOrder>();
+	        this.portfolios = new ArrayList<Portfolio>();
+	    }
+	 
+	 	@Id
+	    public String getMemberId() {
+	        return memberId;
+	    }
+	    
+	    public void setMemberId(String memberId) {
+	        this.memberId = memberId;
+	    }
+	    
+	    public char getStatus() {
+	        return status;
+	    }
+	    
+	    public void setStatus(char status) {
+	        this.status = status;
+	    }
+	    
+	    @Temporal(TIMESTAMP)
+	    public Date getLastUpdate() {
+	        return lastUpdate;
+	    }
+	    
+	    
+	    public void setLastUpdate(Date lastUpdate) {
+	        this.lastUpdate = lastUpdate;
+	    }
+	    
+	    public String getForename()
+	    {
+	    	return forename;
+	    }
+	    
+	    public void setForename(String forename)
+	    {
+	    	this.forename = forename;
+	    }
+
+		public String getSurname() {
+			return surname;
+		}
+
+		public void setSurname(String surname) {
+			this.surname = surname;
+		}
+
+		public Integer getPosition() {
+			return position;
+		}
+
+		public void setPosition(Integer position) {
+			this.position = position;
+		}
+
+		public Integer getMajority() {
+			return majority;
+		}
+
+		public void setMajority(Integer majority) {
+			this.majority = majority;
+		}
+
+		public Integer getIPO() {
+			return IPO;
+		}
+
+		public void setIPO(Integer iPO) {
+			IPO = iPO;
+		}
+
+		public Integer getQuestions() {
+			return questions;
+		}
+
+		public void setQuestions(Integer questions) {
+			this.questions = questions;
+		}
+
+		public Integer getAnswers() {
+			return answers;
+		}
+
+		public void setAnswers(Integer answers) {
+			this.answers = answers;
+		}
+
+		@ManyToOne
+		public Party getParty() {
+			return party;
+		}
+
+		public void setParty(Party party) {
+			this.party = party;
+		}
+	    
+		@OneToMany(cascade=ALL, mappedBy="member")
+	    public Collection<AskOrder> getAskOrders() 
+	    {
+	        return askOrders;
+	    }
+	    
+	    public void setAskOrders(Collection<AskOrder> orders)
+	    {
+	    	this.askOrders = orders;
+	    }
+	   
+	    @OneToMany(cascade=ALL, mappedBy="member")
+	    public Collection<BidOrder> getBidOrders() 
+	    {
+	        return bidOrders;
+	    }
+	    
+	    public void setBidOrders(Collection<BidOrder> bidOrders)
+	    {
+	    	this.bidOrders = bidOrders;
+	    }
+	    
+	    @OneToMany//(mappedBy="members")
+		public Collection<Portfolio> getPortfolios() {
+			return portfolios;
+		}
+
+		public void setPortfolios(Collection<Portfolio> portfolios) {
+			this.portfolios = portfolios;
+		}
+		
+		public void addPortfolio(Portfolio portfolio) {
+	        this.getPortfolios().add(portfolio);
+	    }
+
+}

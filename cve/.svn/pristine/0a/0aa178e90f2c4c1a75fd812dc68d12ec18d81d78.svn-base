@@ -1,0 +1,784 @@
+package politse.web;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import politse.ejb.RequestBean;
+import politse.entity.AskOrder;
+import politse.entity.BidOrder;
+import politse.entity.Member;
+import politse.entity.OrderBook;
+import politse.entity.Party;
+import politse.entity.Portfolio;
+import politse.entity.Trader;
+import politse.entity.User;
+import politse.util.Constants;
+import politse.util.PortfolioException;
+import politse.util.TraderException;
+import politse.entity.Parliament;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.EJB;
+import javax.ejb.NoSuchObjectLocalException;
+import javax.enterprise.context.RequestScoped;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.SessionScoped;
+import javax.faces.bean.ViewScoped;
+import javax.faces.context.ExternalContext;
+import javax.faces.context.FacesContext;
+import javax.inject.Inject;
+//import javax.inject.Inject;
+import javax.inject.Named;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.primefaces.context.RequestContext;
+import org.primefaces.push.EventBus;
+import org.primefaces.push.EventBusFactory;
+
+
+@ManagedBean
+@SessionScoped
+public class ParliamentManager implements Serializable {
+	 /**
+	 * 
+	 */
+	/*@PersistenceContext
+	 private EntityManager em;*/
+	
+	private static final long serialVersionUID = 4200272859694425039L;
+	@EJB
+    private politse.ejb.RequestBean request;
+	@EJB
+	private politse.ejb.OrderMonitorBean monitor;
+	@Inject
+	private politse.web.GrowlView growl;
+	private String newParliamentId, newPartyId, newName, newMemberId;
+	Integer newBillsPassed;
+	private List<Party> partyResults;
+	private List<String> partyResultsId;
+	//boolean findPartiesTableDisabled = false;
+	private List<String> parliamentResultsId;
+	private boolean findParliamentTableDisabled = false;
+	private List<Parliament> parliamentResults;
+	private List<String> memberResultsId;
+	private String portfolioMemberSelected;
+	private boolean findMemberTableDisabled;
+	private List<Member> memberResults;
+	private String newForename;
+	private String newSurname;
+	private Integer newPosition;
+	private Integer newMajority;
+	private Integer newIPO;
+	private Integer newQuestions;
+	private Integer newAnswers;
+	private String newParty;
+	private List<String> memberResultsForename;
+	private String memberSelected;
+	private Integer orderId;
+	private Double askPrice;
+	private Double bidPrice;
+	private Integer amount;
+	private String traderSelected;
+	private ArrayList<String> traderResultsId;
+	private List<Trader> traderResults;
+	private Integer askAmount;
+	private Integer bidAmount;
+	private String bidMemberSelected;
+	private String bidTraderSelected;
+	private ArrayList<String> askOrderResultsId;
+	private List<AskOrder> askOrderResults;
+	private ArrayList<String> bidOrderResultsId;
+	private List<BidOrder> bidOrderResults;
+	private List<OrderBook> findOrderBookMemberResults;
+	private List<String> memberResultsPrice;
+	private Object orderBookResultsId;
+	private List<OrderBook> orderBookResults;
+	private ArrayList<String> latestPricesId;
+	private List<OrderBook> latestPricesResults;
+	private User user;
+	private String userId;
+	private Trader trader;
+	private Double traderBalance;
+	private ArrayList<String> portfolioByTrader;
+	private ArrayList<String> portfolioMembersId;
+	private ArrayList<String> portfolioMembersAmount;
+	private Collection<Portfolio> portfolios;
+	
+
+	// private RequestBean request;
+	 private static final Logger logger = Logger.getLogger("politse.web.ParliamentManager");
+	 
+	 @PostConstruct
+	    public void postInit() {
+	      logger.log(Level.INFO,"Session started");
+	      ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
+	      Map<String, Object> sessionMap = externalContext.getSessionMap();
+	      
+	      user = (User) sessionMap.get("user");
+	      logger.log(Level.INFO, "user trader is: {0}", 
+	    		  new Object[]{user.getTrader().getTraderId().toString()});
+	      userId = user.getUserId();
+	      
+	      findMembers();
+	      findTraders();
+	      
+	      try {
+	    	  findPortfolios();
+	      }catch(NullPointerException e)
+	      {
+	    	  logger.log(Level.INFO, "postConstruct no portfolio found");
+	      }
+	      
+	      logger.log(Level.INFO, "Primefaces version: {0}", 
+	    		  new Object[]{RequestContext.getCurrentInstance().getApplicationContext().getConfig().getBuildVersion()});
+	    }
+
+		@PreDestroy
+	    public void preEnd(){
+	    	logger.log(Level.INFO,"Session ended");
+	    }
+
+	 public void submitParliament() {
+	        try {
+	            request.createParliament(newParliamentId);
+	            logger.log(Level.INFO, "Created new parliament with parliament ID {0}", 
+	                    new Object[]{newParliamentId});
+	          //  this.newParliamentId = null;
+	        } catch (Exception e) {
+	            logger.warning("Problem creating parliament in submitParliament.");
+	            logger.warning(e.getMessage());
+	            newParliamentId = "error";
+	        }
+	    }
+	 
+	 public void findParliaments() {
+	        try {
+	        	parliamentResultsId = new ArrayList<String>();
+	            this.findParliamentTableDisabled = true;
+	            this.parliamentResults = (List<Parliament>) request.findParliaments();
+	           
+	            for (Iterator<Parliament> it = parliamentResults.iterator(); it.hasNext();) 
+	            {
+	            	Parliament parliament = it.next();
+	                parliamentResultsId.add(parliament.getParliamentId());
+	                logger.log(Level.INFO, "Found {0} parliaments", parliament.getParliamentId());
+	            }
+	        } catch (Exception e) {
+	            logger.warning("Problem calling RequestBean.findParliaments");
+	            logger.warning(e.getMessage());
+	        }
+	    }
+	 
+	 
+	 public void submitParty() {
+	        try {
+	            request.createParty(newPartyId, newName, newBillsPassed, newParliamentId);
+	            logger.log(Level.INFO, "Created new party with party ID {0}", 
+	                    new Object[]{newPartyId});
+	       //     this.newPartyId = null;
+	        } catch (Exception e) {
+	            logger.warning("Problem creating party in submitParty.");
+	            logger.warning(e.getMessage());
+	            newPartyId = "error";
+	        }
+	    }
+	 
+	 public Integer getNewBillsPassed() {
+		return newBillsPassed;
+	}
+
+	public void setNewBillsPassed(Integer newBillsPassed) {
+		this.newBillsPassed = newBillsPassed;
+	}
+	 
+	 public void submitMember() {
+	        try {
+	            request.createMember(newMemberId, newForename, newSurname, newPosition, 
+		    			newMajority, newIPO, newQuestions, newAnswers, newParty);
+	            logger.log(Level.INFO, "Created new member with member ID {0}", 
+	                    new Object[]{newMemberId});
+	            logger.log(Level.INFO, "Created new member with forename {0}", 
+	                    new Object[]{newForename});
+	        } catch (Exception e) {
+	            logger.warning("Problem creating member in submitMember.");
+	            logger.warning(e.getMessage());
+	            newMemberId = "error";
+	        }
+	    }
+	 
+	 public void findMembers() {
+	        try {
+	        	memberResultsId = new ArrayList<String>();
+	        	memberResultsForename = new ArrayList<String>();
+	            this.findMemberTableDisabled = true;
+	            this.memberResults = (List<Member>) request.findMembers();
+	            
+	           
+	            for (Iterator<Member> it = memberResults.iterator(); it.hasNext();) 
+	            {
+	            	Member member = it.next();
+	                memberResultsId.add(member.getMemberId());
+	                memberResultsForename.add(member.getForename());
+	                logger.log(Level.INFO, "Found {0} members", member.getMemberId());
+	                logger.log(Level.INFO, "Found {0} forename", member.getForename());
+	                
+	            }
+	         
+	        } catch (Exception e) {
+	            logger.warning("Problem calling RequestBean.findMembers");
+	            logger.warning(e.getMessage());
+	        }
+	    }
+	 
+	 public List<String> getMemberResultsPrice() {
+		return memberResultsPrice;
+	}
+
+	public void setMemberResultsPrice(List<String> memberResultsPrice) {
+		this.memberResultsPrice = memberResultsPrice;
+	}
+
+	public void findTraders() {
+			traderResultsId = new ArrayList<String>();
+			trader = request.findTrader(user.getTrader().getTraderId());
+			traderResultsId.add(trader.getTraderId().toString());
+			traderBalance = trader.getBalance();
+			logger.log(Level.INFO, "findTraders trader is: {0}", 
+		    		  new Object[]{trader.getTraderId().toString()});
+	    }
+	 
+	 public void submitAskOrder() {
+		 
+		 logger.log(Level.INFO, "submitAskOrder");
+		 
+	        try {
+	        	//check we have enough shares to sell
+	        	Portfolio portfolio = request.findPortfolioBalance(portfolioMemberSelected,bidTraderSelected);
+	        	if(portfolio.getBalance() < askAmount)
+	        	{   
+	        		growl.setMessage("Error You have " + portfolio.getBalance() + " shares in " + 
+	        				portfolioMemberSelected + " available to sell and are trying to sell " + askAmount);
+	        		growl.saveMessage();
+	  	        }
+	        	else if(askAmount <= 0){
+	        		growl.setMessage("Error Ask amount must be greater than " + askAmount);
+	        		growl.saveMessage();
+	        	}else if(askPrice <= 0.0){
+		        		growl.setMessage("Error Ask price must be greater than " + askPrice);
+		        		growl.saveMessage();
+		        	
+	        	}else
+	        	{
+	        		logger.log(Level.INFO, "Creating askorder");
+	        		
+	        		request.createAskOrder(askAmount, askPrice, portfolioMemberSelected, bidTraderSelected);
+	        		logger.log(Level.INFO, "Created new ask order with askprice ID {0}",                 
+	        				new Object[]{askPrice});
+	      
+	        		checkOrders();
+	        		
+	        	}
+	        } catch (PortfolioException e) {
+	            logger.warning("PortfolioException creating order in submitAskOrder.");
+	            logger.warning(e.getMessage());
+	            growl.setMessage(e.getMessage());
+	            growl.saveMessage();
+	            
+	            EventBus eventBus = EventBusFactory.getDefault().eventBus();
+		        eventBus.publish("/notify", "error");
+	        }
+	    }
+	 
+	 public void submitBidOrder() {
+	        try {
+	        	
+	        	if(bidAmount <= 0){
+	        		growl.setMessage("Error bid amount must be greater than " + bidAmount);
+	        		growl.saveMessage();
+	        	}
+	        	else if(bidPrice <= 0.0){
+	        		growl.setMessage("Error bid price must be greater than " + bidPrice);
+	        		growl.saveMessage();
+	        	}else
+	        	{
+		            request.createBidOrder(bidAmount, bidPrice, bidMemberSelected, bidTraderSelected);
+		            logger.log(Level.INFO, "Created new bid order with bidprice ID {0}", 
+		                    new Object[]{bidPrice});
+		            
+		            checkOrders();
+	            }
+	        } catch (Exception e) {
+	            logger.warning("Problem creating order in submitBidOrder.");
+	            logger.warning(e.getMessage());
+	        }
+	        
+	    }
+	 
+	 public void findAskOrders() {
+	        try {
+	        	askOrderResultsId = new ArrayList<String>();
+	            this.askOrderResults = (List<AskOrder>) request.findAskOrdersByTrader(user.getTrader());
+	           
+	            for (Iterator<AskOrder> it = askOrderResults.iterator(); it.hasNext();) 
+	            {
+	            	AskOrder askOrder = it.next();
+	            	askOrderResultsId.add(askOrder.getOrderId().toString());
+	                logger.log(Level.INFO, "Found {0} askorders", askOrder.getOrderId());
+	            }
+	         
+	        } catch (Exception e) {
+	            logger.warning("Problem calling ParliamentManager.findAskOrders");
+	            logger.warning(e.getMessage());
+	        }
+	    }
+	 
+	 public void findBidOrders() {
+	        try {
+	        	bidOrderResultsId = new ArrayList<String>();
+	            this.bidOrderResults = (List<BidOrder>) request.findBidOrdersByTrader(user.getTrader());
+	           
+	            for (Iterator<BidOrder> it = bidOrderResults.iterator(); it.hasNext();) 
+	            {
+	            	BidOrder bidOrder = it.next();
+	            	askOrderResultsId.add(bidOrder.getOrderId().toString());
+	                logger.log(Level.INFO, "Found {0} bidorders", bidOrder.getOrderId());
+	            }
+	         
+	        } catch (Exception e) {
+	            logger.warning("Problem calling RequestBean.findMembers");
+	            logger.warning(e.getMessage());
+	        }
+	    }
+	 
+	 public void findAllOrderBooks()
+	 {
+		orderBookResultsId = new ArrayList<String>();
+		orderBookResults = request.findAllOrderBooks();
+		 for (Iterator<OrderBook> it = orderBookResults.iterator(); it.hasNext();) 
+         {
+         	OrderBook orderBook = it.next(); 
+            logger.log(Level.INFO, "Found {0} orderbook price", orderBook.getPrice());
+         }
+	 }
+	 
+	 public void findLatestPrices()
+	 {
+		logger.log(Level.INFO, "findLatestPrices with user {0} ",user.getUserId());
+		
+		findAllOrderBooks(); 
+		latestPricesId = new ArrayList<String>();
+		setLatestPricesResults(request.findLatestPrices());
+		 for (Iterator<OrderBook> it = orderBookResults.iterator(); it.hasNext();) 
+         {
+         	OrderBook orderBook = it.next(); 
+            logger.log(Level.INFO, "Found {0} orderbook price", orderBook.getPrice());
+         }
+		 
+		 logger.log(Level.INFO, "End of findLatestPrices with user {0} ",user.getUserId());
+	 }
+	 
+	 public void checkOrders()
+	 {
+         
+		 monitor.checkOrderBook(user.getUserId());
+		 logger.log(Level.INFO, "parliamentManager.checkOrders ");
+	 }
+	 
+	 
+	 public List<OrderBook> getOrderBookResults() {
+		return orderBookResults;
+	}
+
+	public void setOrderBookResults(List<OrderBook> orderBookResults) {
+		this.orderBookResults = orderBookResults;
+	}
+
+	public List<AskOrder> getAskOrderResults() {
+		return askOrderResults;
+	}
+
+	public void setAskOrderResults(List<AskOrder> askOrderResults) {
+		this.askOrderResults = askOrderResults;
+	}
+
+	public Integer getBidAmount() {
+		return bidAmount;
+	}
+
+	public void setBidAmount(Integer bidAmount) {
+		this.bidAmount = bidAmount;
+	}
+
+	public String getBidTraderSelected() {
+		return bidTraderSelected;
+	}
+
+	public void setBidTraderSelected(String bidTraderSelected) {
+		logger.log(Level.INFO, "setBidTraderSelected bidTraderSelected: {0} ", bidTraderSelected);
+		this.bidTraderSelected = bidTraderSelected;
+	}
+
+	public String getBidMemberSelected() {
+		return bidMemberSelected;
+	}
+
+	public void setBidMemberSelected(String bidMemberSelected) {
+		this.bidMemberSelected = bidMemberSelected;
+	}
+
+	public Party getPartyById(String partyId) {
+		 
+		 Party party = null;
+		 
+	        try {
+	            this.partyResults = (List<Party>) request.findParties(); //FIXME: request is null
+	           
+	            for (Iterator<Party> it = partyResults.iterator(); it.hasNext();) 
+	            {
+	            	party = it.next();
+	                logger.log(Level.INFO, "Found {0} party", party.getPartyId());
+	                if(partyId.equals(party.getPartyId()))
+	                	break;
+	            }
+	         
+	        } catch (Exception e) {
+	            logger.warning("Problem calling ParliamentManager.getPartyById");
+	            logger.warning("error: " + e.getMessage());
+	        }
+	        
+	        return party;
+	    }
+	
+	public void findPortfolios()
+	{
+		logger.log(Level.INFO, "findPortfolios bidTraderSelected: {0} ", bidTraderSelected);
+		
+		portfolioMembersId = new ArrayList<String>();
+		portfolios = request.findPortfoliosByTrader(user.getTrader().getTraderId().toString());
+		Iterator<Portfolio> portfolioIter = portfolios.iterator();
+		while(portfolioIter.hasNext())
+		{
+			portfolioMembersId.add(portfolioIter.next().getMember().getMemberId());
+		}
+		
+		logger.log(Level.INFO, "findPortfolios size: {0} ", portfolios.size());
+	}
+	 
+	 public ArrayList<String> getPortfolioMembersId() {
+		return portfolioMembersId;
+	}
+
+	public void setPortfolioMembersId(ArrayList<String> portfolioMembersId) {
+		this.portfolioMembersId = portfolioMembersId;
+	}
+
+	public ArrayList<String> getPortfolioMembersAmount() {
+		return portfolioMembersAmount;
+	}
+
+	public void setPortfolioMembersAmount(ArrayList<String> portfolioMembersAmount) {
+		this.portfolioMembersAmount = portfolioMembersAmount;
+	}
+
+	public Collection<Portfolio> getPortfolios() {
+		return portfolios;
+	}
+
+	public void setPortfolios(Collection<Portfolio> portfolios) {
+		this.portfolios = portfolios;
+	}
+
+	public String getNewParliamentId() {
+	        return newParliamentId;
+	    }
+
+	    /**
+	     * @param newParliamentId 
+	     */
+	    public void setNewParliamentId(String newParliamentId) {
+	        this.newParliamentId = newParliamentId;
+	    }
+	    
+	    public String getNewPartyId() {
+	        return newPartyId;
+	    }
+
+	    /**
+	     *
+	     */
+	    public void setNewPartyId(String newPartyId) {
+	        this.newPartyId = newPartyId;
+	    }
+	    
+	    /**
+	     * @return the vendorSearchResults
+	     */
+	    public List<String> getPartyResultsId() {
+	        return partyResultsId;
+	    }
+
+	    /**
+	     * @param vendorSearchResults the vendorSearchResults to set
+	     */
+	    public void setPartyResultsId(List<String> partyResultsId) {
+	        this.partyResultsId = partyResultsId;
+	    }
+	    
+	    /**
+	     * @return the vendorSearchResults
+	     */
+	    public List<String> getParliamentResultsId() {
+	        return parliamentResultsId;
+	    }
+
+	    /**
+	     * @param vendorSearchResults the vendorSearchResults to set
+	     */
+	    public void setParliamentResultsId(List<String> parliamentResultsId) {
+	        this.parliamentResultsId = parliamentResultsId;
+	    }
+	    
+	    public String getNewMemberId()
+	    {
+	    	return newMemberId;
+	    }
+	    
+	    public void setNewMemberId(String newMemberId)
+	    {
+	    	this.newMemberId = newMemberId;
+	    }
+	    
+	    public String getNewForename()
+	    {
+	    	return newForename;
+	    }
+	    
+	    public void setNewForename(String newForename)
+	    {
+	    	this.newForename = newForename;
+	    }
+	    
+	    public String getNewSurname()
+	    {
+	    	return newSurname;
+	    }
+	    
+	    public void setNewSurname(String newSurname)
+	    {
+	    	this.newSurname = newSurname;
+	    }
+	    
+	    public Integer getNewMajority()
+	    {
+	    	return newMajority;
+	    }
+	    
+	    public void setNewMajority(Integer newMajority)
+	    {
+	    	this.newMajority = newMajority;
+	    }
+	    
+	    public void setNewPosition(Integer newPosition)
+	    {
+	    	this.newPosition = newPosition;
+	    }
+	    
+	    public Integer getNewPosition() {
+	        return newPosition;
+	    }
+	    
+	    public void setNewIPO(Integer newIPO)
+	    {
+	    	this.newIPO = newIPO;
+	    }
+	    
+	    public Integer getNewIPO() {
+	        return newIPO;
+	    }
+	    
+	    public void setNewQuestions(Integer newQuestions)
+	    {
+	    	this.newQuestions = newQuestions;
+	    }
+	    
+	    public Integer getNewQuestions() {
+	        return newQuestions;
+	    }
+	    
+	    public void setNewAnswers(Integer newAnswers)
+	    {
+	    	this.newAnswers = newAnswers;
+	    }
+	    
+	    public Integer getNewAnswers() {
+	        return newAnswers;
+	    }
+	    
+	    public List<String> getMemberResultsId() {
+	        return memberResultsId;
+	    }
+	    
+	    public String getNewParty() {
+	        return newParty;
+	    }
+	    
+	    public void setNewParty(String newParty) {
+	        this.newParty = newParty;
+	    }
+
+	    /**
+	     * @param vendorSearchResults the vendorSearchResults to set
+	     */
+	    public void setMemberResultsId(List<String> memberResultsId) {
+	        this.memberResultsId = memberResultsId;
+	    }
+	    
+	    public List<Member> getMemberResults() {
+	        return memberResults;
+	    }
+
+	    /**
+	     * @param vendorSearchResults the vendorSearchResults to set
+	     */
+	    public void setMemberResults(List<Member> memberResults) {
+	        this.memberResults = memberResults;
+	    }
+
+	    public String getNewName() {
+			return newName;
+		}
+
+		public void setNewName(String newName) {
+			this.newName = newName;
+		}
+
+		public String getMemberSelected() {
+			
+			logger.log(Level.INFO, "getMemberSelected {0}", 
+                    new Object[]{this.memberSelected});
+			
+			return memberSelected;
+		}
+
+		public void setMemberSelected(String memberSelected) {
+			this.memberSelected = memberSelected;
+			
+			 logger.log(Level.INFO, "setMemberSelected {0}", 
+	                    new Object[]{this.memberSelected});
+		}
+		
+		public Integer getOrderId() {
+			return orderId;
+		}
+
+		public void setOrderId(Integer orderId) {
+			this.orderId = orderId;
+		}
+
+		public Double getAskPrice() {
+			return askPrice;
+		}
+
+		public void setAskPrice(Double askPrice) {
+			this.askPrice = askPrice;
+		}
+
+		public Double getBidPrice() {
+			return bidPrice;
+		}
+
+		public void setBidPrice(Double bidPrice) {
+			this.bidPrice = bidPrice;
+		}
+
+		public Integer getAmount() {
+			return amount;
+		}
+
+		public void setAmount(Integer amount) {
+			this.amount = amount;
+		}
+
+		public String getTraderSelected() {
+			return traderSelected;
+		}
+
+		public void setTraderSelected(String traderSelected) {
+			this.traderSelected = traderSelected;
+		}
+
+		public ArrayList<String> getTraderResultsId() {
+			return traderResultsId;
+		}
+
+		public void setTraderResultsId(ArrayList<String> traderResultsId) {
+			this.traderResultsId = traderResultsId;
+		}
+
+		public Integer getAskAmount() {
+			return askAmount;
+		}
+
+		public void setAskAmount(Integer askAmount) {
+			this.askAmount = askAmount;
+		}
+
+		public List<BidOrder> getBidOrderResults() {
+			return bidOrderResults;
+		}
+
+		public void setBidOrderResults(List<BidOrder> bidOrderResults) {
+			this.bidOrderResults = bidOrderResults;
+		}
+
+		public List<OrderBook> getLatestPricesResults() {
+			return latestPricesResults;
+		}
+
+		public void setLatestPricesResults(List<OrderBook> latestPricesResults) {
+			this.latestPricesResults = latestPricesResults;
+		}
+
+		public Double getTraderBalance() {
+			logger.log(Level.INFO, "ParliamentManager.getTraderBalance {0}", 
+                    new Object[]{traderBalance});
+			return traderBalance;
+		}
+
+		public void setTraderBalance(Double traderBalance) {
+			this.traderBalance = traderBalance;
+		}
+
+		public String getPortfolioMemberSelected() {
+			return portfolioMemberSelected;
+		}
+
+		public void setPortfolioMemberSelected(String portfolioMemberSelected) {
+			this.portfolioMemberSelected = portfolioMemberSelected;
+		}
+		
+		public User getUser() {
+			return user;
+		}
+
+		public void setUser(User user) {
+			this.user = user;
+		}
+		
+		public String getUserId() {
+			return userId;
+		}
+
+		public void setUserId(String userId) {
+			this.userId = userId;
+		}
+}

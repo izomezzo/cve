@@ -1,0 +1,7 @@
+package politse.util;
+
+public class Constants {
+	
+	public static boolean ISTEST = false;
+
+}

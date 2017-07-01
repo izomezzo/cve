@@ -1,0 +1,16 @@
+package politse.util;
+
+public class PortfolioException extends Exception {
+
+	private static final long serialVersionUID = -7059009216033923687L;
+
+	public PortfolioException()
+	{
+		
+	}
+	
+	public PortfolioException(String msg)
+	{
+		super(msg);
+	}
+}

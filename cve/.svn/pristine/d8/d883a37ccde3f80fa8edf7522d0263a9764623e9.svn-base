@@ -1,0 +1,78 @@
+package politse.ejb;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.ejb.EJB;
+import javax.ejb.ScheduleExpression;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.ejb.Timeout;
+import javax.ejb.Timer;
+import java.util.logging.Logger;
+import javax.ejb.TimerService;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.primefaces.push.EventBus;
+import org.primefaces.push.EventBusFactory;
+
+import politse.entity.AskOrder;
+import politse.entity.BidOrder;
+import politse.util.TraderException;
+
+
+@Singleton
+@Startup
+public class OrderMonitorBean {
+	
+	@EJB
+    private politse.ejb.RequestBean request;
+	private static final Logger logger = Logger.getLogger("politse.ejb.OrderMonitor");
+	
+	public void checkOrderBook(String userId) {
+		
+		logger.log(Level.INFO, "OrderMonitorBean.checkOrderBook");
+				
+				List<AskOrder> askOrderMatches;
+				List<BidOrder> bidOrderResults = request.findBidOrderMembers();
+				
+				logger.log(Level.INFO, "bidOrderResults size {0}", bidOrderResults.size());
+		        
+		        for(Iterator<BidOrder> bo = bidOrderResults.iterator(); bo.hasNext();)
+		        {
+		        	BidOrder bidOrder = bo.next();//FIXME - findAskOrdersByMember returns 0 when matching askorders
+		        	
+		        	logger.log(Level.INFO, "askOrderMatches bidOrder.getMember {0}", bidOrder.getMember().getMemberId());
+		        	logger.log(Level.INFO, "askOrderMatches bidOrder.getTrader {0}", bidOrder.getTrader().getTraderId());
+		        	askOrderMatches = request.findAskOrdersByMember(bidOrder.getMember(),bidOrder.getTrader());
+		        	
+		        	logger.log(Level.INFO, "askOrderMatches size {0}", askOrderMatches.size());
+		        	
+		        	for(Iterator<AskOrder> ao = askOrderMatches.iterator(); ao.hasNext();)
+		        	{
+		        		AskOrder askOrder = ao.next();
+		        		logger.log(Level.INFO, "-----");
+		        		logger.log(Level.INFO, "askOrderMatches {0}", askOrder.getOrderId());
+		        		logger.log(Level.INFO, "askOrder traderId {0}", askOrder.getTrader().getTraderId());
+		        		logger.log(Level.INFO, "bidOrder traderId {0}", bidOrder.getTrader().getTraderId());
+		        		logger.log(Level.INFO, "-----");
+		       
+		        		if(!request.orderBookExists(bidOrder.getOrderId(),askOrder.getOrderId()))
+		        		{
+		        			request.createOrderBook(bidOrder.getOrderId(), askOrder.getOrderId(),userId);//not using amount
+		        		}
+		        		else
+		        		{
+		        			logger.log(Level.INFO, "OrderBook already exists");
+		        		}
+		        	}
+		        }
+				
+	}
+
+}

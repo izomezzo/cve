@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    <h:head>    
+     </h:head>
+    <h:body>
+    <script type="text/javascript">
+		</script>
+    <h:form id ="portfolioForm">
+        <p:dataTable id="portfolioTable" var="portfolio" value="#{portfolioView.portfolios}">
+			<f:facet name="header">
+            	Portfolio
+        	</f:facet>
+			    <p:column headerText="Member">
+			        <h:outputText value="#{portfolio.member.memberId}" />
+			    </p:column>
+			 
+			    <p:column headerText="Amount">
+			        <h:outputText value="#{portfolio.balance}" />
+			    </p:column>
+			</p:dataTable>
+			
+			<p:dataTable id="askOrdersTable" var="orders" value="#{portfolioView.askOrders}">
+			<f:facet name="header">
+            	Pending Ask Orders
+        	</f:facet>
+			    <p:column headerText="Member">
+			        <h:outputText value="#{orders.member.memberId}" />
+			    </p:column>
+			 
+			    <p:column headerText="Price">
+			        <h:outputText value="#{orders.price}" />
+			    </p:column>
+			    
+			    <p:column headerText="Amount">
+			        <h:outputText value="#{orders.amount}" />
+			    </p:column>
+			</p:dataTable>
+			
+			<p:dataTable id="bidOrdersTable" var="orders" value="#{portfolioView.bidOrders}">
+			<f:facet name="header">
+            	Pending Bid Orders
+        	</f:facet>
+			    <p:column headerText="Member">
+			        <h:outputText value="#{orders.member.memberId}" />
+			    </p:column>
+			 
+			    <p:column headerText="Price">
+			        <h:outputText value="#{orders.price}" />
+			    </p:column>
+			    
+			    <p:column headerText="Amount">
+			        <h:outputText value="#{orders.amount}" />
+			    </p:column>
+			</p:dataTable>
+			</h:form>
+    </h:body>
+    </html>
+

@@ -1,0 +1,238 @@
+package politse.ejb;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.ejb.EJB;
+import javax.enterprise.context.SessionScoped;
+import javax.faces.application.FacesMessage;
+import javax.faces.bean.ManagedBean;
+
+import org.primefaces.push.EventBus;
+import org.primefaces.push.EventBusFactory;
+
+import politse.entity.AskOrder;
+import politse.entity.BidOrder;
+import politse.entity.OrderBook;
+import politse.entity.Portfolio;
+import politse.entity.Trader;
+import politse.util.Constants;
+
+@ManagedBean
+@SessionScoped
+public class OrderBookManager implements Serializable {
+	
+	private static final long serialVersionUID = -2650745790487437955L;
+	private static final Logger logger = Logger.getLogger("politse.ejb.OrderBookManager");
+	private BidOrder bidOrder;
+	private AskOrder askOrder;
+	private Integer bidOrderAmount;
+	private Integer askOrderAmount;
+	@EJB
+    private politse.ejb.RequestBean request;
+	
+	//set the price of the stock
+	public void setPrice(AskOrder askOrder, BidOrder bidOrder, OrderBook book)
+	{
+    	this.askOrder = askOrder;
+    	this.bidOrder = bidOrder;
+    	
+		logger.log(Level.INFO, "AskOrder amount was: {0}", askOrder.getAmount());
+    	
+    	//set the price
+    	Date bidDate = bidOrder.getLastUpdate();
+    	Date askDate = askOrder.getLastUpdate();
+    	Collection<Portfolio>bidPortfolios = bidOrder.getTrader().getPortfolios();
+    	Iterator<Portfolio> portfolioIter = bidPortfolios.iterator();
+    	Portfolio bidPortfolio = null;
+    	while(portfolioIter.hasNext())
+    	{
+    		Portfolio portfolio = portfolioIter.next();
+    		if(portfolio.getMember().getMemberId().equals(bidOrder.getMember().getMemberId()))
+    		{	
+    			bidPortfolio = portfolio;
+    			break;
+    		}
+    	}
+    	if(bidDate.before(askDate))
+    		book.setPrice(bidOrder.getPrice());
+    	if(askDate.before(bidDate))
+    		book.setPrice(askOrder.getPrice());
+    
+    	try {
+    	
+    		//logger.log(Level.INFO, "Bid has no portfolio");
+    		logger.log(Level.INFO, "book.getPrice()*bidOrder.getAmount(): {0}",
+    				(book.getPrice() * bidOrder.getAmount()));
+    		logger.log(Level.INFO, "bidOrder.getTrader().getBalance(): {0}",
+    				(bidOrder.getTrader().getBalance()));
+    	
+    if(!Constants.ISTEST){	
+    	if((book.getPrice() * askOrder.getAmount()) > bidOrder.getTrader().getBalance())
+    	{
+    		EventBus eventBus = EventBusFactory.getDefault().eventBus();
+            eventBus.publish(bidOrder.getTrader().getUser().getUserId(), 
+            		new FacesMessage("Error", "You have " + bidOrder.getTrader().getBalance() 
+            + " and are trying to buy " + book.getPrice()*askOrder.getAmount())); //FIXME: should be calculated on ask price
+            return;
+    	}
+    }
+    	}catch(NullPointerException e)
+    	{
+    		logger.log(Level.INFO, "Bid has no portfolio, stacktrace: {0}", e.getStackTrace());
+    	}
+	}
+	
+	public void setTraderBalances(OrderBook book, Integer askAmount, Integer bidAmount)
+	{
+		//get orderbook price
+		Double price = book.getPrice();
+		AskOrder sellingOrder = book.getAskOrderId(); 
+		BidOrder buyingOrder = book.getBidOrderId();
+		Integer sellingAmount = askAmount;
+		Integer buyingAmount = bidAmount;
+		Trader sellingTrader = sellingOrder.getTrader();
+		Trader buyingTrader = buyingOrder.getTrader();
+		Double buyingBalance = buyingTrader.getBalance();
+		Double sellingBalance = sellingTrader.getBalance();
+		
+		Double sellingCredit = sellingBalance + price*sellingAmount;
+		logger.log(Level.INFO, "setTraderBalances sellingCredit: {0}", 
+                sellingCredit);
+		
+		Double buyingDebit = buyingBalance - price*sellingAmount;
+		logger.log(Level.INFO, "setTraderBalances buyingBalance: {0}", 
+                buyingBalance);
+		logger.log(Level.INFO, "setTraderBalances price: {0}", 
+                price);
+		logger.log(Level.INFO, "setTraderBalances buyingAmount: {0}", 
+                buyingAmount);
+		logger.log(Level.INFO, "setTraderBalances buyingDebit: {0}", 
+                buyingDebit);
+		
+		buyingTrader.setBalance(buyingDebit);
+		sellingTrader.setBalance(sellingCredit);
+		
+		logger.log(Level.INFO, "buyingTrader getBalance: {0}", 
+				buyingTrader.getBalance());
+		logger.log(Level.INFO, "sellingTrader getBalance: {0}", 
+				sellingTrader.getBalance());
+	
+	}
+	
+	public void setAmounts()
+	{
+		bidOrderAmount = bidOrder.getAmount();
+		askOrderAmount = askOrder.getAmount();
+		//set amounts	    	
+    	Integer askRemainder = 0;
+    	//Integer totalAmount = 0;
+    	if(bidOrderAmount > askOrderAmount)
+    	{
+    		Integer totalAmount = bidOrderAmount - askOrderAmount;
+    		askRemainder = askOrderAmount - totalAmount;
+    	}
+    	else	    		
+    	{
+    		askRemainder = askOrderAmount - bidOrderAmount;
+    	}
+    	if(askRemainder > 0)
+    	{
+    		askOrder.setAmount(askRemainder);
+    	}
+    	else
+    	{
+    		askOrder.setAmount(0);
+    	}
+    	
+    	logger.log(Level.INFO, "AskOrder amount is: {0}", askOrder.getAmount());
+    	
+    	logger.log(Level.INFO, "BidOrder amount  was: {0}", bidOrder.getAmount());
+    	
+    	Integer bidRemainder = 0;
+    	if(askOrderAmount > bidOrderAmount)
+    	{
+    		Integer totalAmount = askOrderAmount - bidOrderAmount;
+    		bidRemainder = bidOrderAmount - totalAmount;
+    	}
+    	else
+    	{
+    		bidRemainder = bidOrderAmount - askOrderAmount;
+    	}
+    	if(bidRemainder > 0)
+    	{
+    		bidOrder.setAmount(bidRemainder);
+    	}
+    	else
+    	{
+    		bidOrder.setAmount(0);
+    	}
+    	
+	}
+	
+	public void addPortfolio(){
+		
+		Collection<Portfolio>bidPortfolios = bidOrder.getTrader().getPortfolios();
+		//if portfolio doesn't exist add
+    	boolean hasMember = false;
+    	Trader bidTrader = bidOrder.getTrader();
+    	//Collection<Portfolio> bidPortfolios = bidTrader.getPortfolios();
+    	Iterator<Portfolio> bidPortfoliosIter = bidPortfolios.iterator();
+    	while(bidPortfoliosIter.hasNext())
+    	{
+    		Portfolio portfolio = bidPortfoliosIter.next();
+    		if(portfolio.getMember().equals(bidOrder.getMember()))
+    		{
+    				hasMember = true;
+    				break;
+    		}
+    	}
+    	
+    	if(bidPortfolios.size() == 0 || hasMember == false)
+    	{
+    		bidTrader.addPortfolio(request.createPortfolio(0,bidOrder.getMember().getMemberId(),bidTrader.getTraderId()));	    		
+    		logger.log(Level.INFO, "added portfolio with member: {0}", bidOrder.getMember().getMemberId());
+    		logger.log(Level.INFO, "added portfolio to trader: {0}", bidTrader.getTraderId());
+    	}
+    	
+	}
+	
+	public void setPortfolioBalance(){
+		
+		logger.log(Level.INFO, "setPortfolioBalance");
+		
+		//set portfolio balances amounts
+    	Trader bidTrader = bidOrder.getTrader();
+    	Collection<Portfolio> bidPortfolios = bidTrader.getPortfolios();
+    	Iterator<Portfolio> bidPortfoliosIter = bidPortfolios.iterator();
+    	while(bidPortfoliosIter.hasNext())
+    	{
+    		Portfolio portfolio = bidPortfoliosIter.next();
+    		if(portfolio.getMember().equals(bidOrder.getMember()))
+    		{
+    			portfolio.setBalance(portfolio.getBalance() + askOrderAmount);
+    			logger.log(Level.INFO, "set bid portfolio amount to {0}", askOrderAmount);
+    		}
+    	}
+    	
+    	
+    	Trader askTrader = askOrder.getTrader();
+    	Collection<Portfolio>askPortfolios = askTrader.getPortfolios();
+    	Iterator<Portfolio> askPortfoliosIter = askPortfolios.iterator();
+    	while(askPortfoliosIter.hasNext())
+    	{
+    		Portfolio portfolio = askPortfoliosIter.next();
+    		if(portfolio.getMember().equals(askOrder.getMember()))
+    		{
+    			portfolio.setBalance(portfolio.getBalance() - askOrderAmount);
+    			logger.log(Level.INFO, "set ask portfolio amount to {0}", askOrderAmount);
+    		}
+    	}
+    	
+	}	
+
+}

@@ -1,0 +1,61 @@
+package politse.entity;
+
+public class PartyKey implements java.io.Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1745628974233538217L;
+    private String parliamentId;
+    private String partyId;
+
+    public PartyKey() {
+    }
+
+    public PartyKey(String parliamentId, String partyId) {
+        this.setParliament(parliamentId);
+        this.setPartyId(partyId);
+    }
+
+    @Override
+    public int hashCode() {
+        return ((this.getParliament() == null ? 0 : this.getParliament().hashCode()) ^ this.getPartyId().hashCode());
+    }
+
+    @Override
+    public boolean equals(Object otherOb) {
+
+        if (this == otherOb) {
+            return true;
+        }
+        if (!(otherOb instanceof PartyKey)) {
+            return false;
+        }
+        PartyKey other = (PartyKey) otherOb;
+        return ((this.getParliament() == null
+                ? other.getParliament() == null : this.getParliament()
+                .equals(other.getParliament()))
+                && (this.getPartyId() == other.getPartyId()));
+    }
+
+    @Override
+    public String toString() {
+        return "" + getParliament() + "-" + getPartyId();
+    }
+
+    public String getParliament() {
+        return parliamentId;
+    }
+
+    public void setParliament(String parliament) {
+        this.parliamentId = parliament;
+    }
+
+    public String getPartyId() {
+        return partyId;
+    }
+
+    public void setPartyId(String partyId) {
+        this.partyId = partyId;
+    }
+}
