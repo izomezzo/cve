@@ -4,4 +4,8 @@
 /target/
 /build/
 /.settings
-!/.gitignore
+.idea/
+cve/.svn/tmp/
+cve/cve.iml
+.svn/tmp/
+cve.iml
