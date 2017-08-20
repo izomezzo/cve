@@ -1,5 +1,4 @@
-/createDDL.jdbc
-/dropDDL.jdbc
+createDDL.jdbc
 /Users/
 /target/
 /build/
@@ -9,3 +8,6 @@ cve/.svn/tmp/
 cve/cve.iml
 .svn/tmp/
 cve.iml
+/.classpath
+/.project
+/dropDDL.jdbc
