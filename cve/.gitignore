@@ -3,3 +3,5 @@
 /Users/
 /target/
 /build/
+/.settings
+!/.gitignore
