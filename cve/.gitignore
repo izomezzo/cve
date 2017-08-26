@@ -6,7 +6,7 @@ createDDL.jdbc
 .idea/
 cve/.svn/tmp/
 cve/cve.iml
-.svn/tmp/
+.svn/
 cve.iml
 /.classpath
 /.project
